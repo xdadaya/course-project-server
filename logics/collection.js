@@ -2,6 +2,7 @@ import Collection from "../models/Collection.js";
 import User from "../models/User.js";
 import path, { dirname } from 'path'
 import { fileURLToPath } from 'url'
+import { unlink } from 'node:fs'
 
 export const createCollection = async(req, res) =>{
     try{
@@ -68,7 +69,9 @@ export const getCollectionById = async(req, res) => {
 export const deleteCollectionById = async(req, res) => {
     try{
         const collection = await Collection.findByIdAndDelete(req.params.id)
-        // Delete ${collection.imgUrl} from uploads
+        unlink(`./uploads/${collection.imgUrl}`, (err) => {
+            if (err) throw err;
+        })
         if(!collection) res.json({message: "There is no collection with that id"})
         await User.findByIdAndUpdate(collection.author, {
             $pull: { posts: req.params.id },
@@ -85,12 +88,14 @@ export const updateCollectionById = async(req, res) => {
         const collection = await Collection.findById(id)
 
         if(req.files) {
+            unlink(`./uploads/${collection.imgUrl}`, (err) => {
+                if (err) throw err;
+            })
             let fileName = Date.now().toString() + req.files.image.name
             const __dirname = dirname(fileURLToPath(import.meta.url))
             req.files.image.mv(path.join(__dirname, '..', 'uploads', fileName))
             collection.imgUrl = fileName || ''
         }
-
         collection.title = title
         collection.description = description
         collection.theme = theme

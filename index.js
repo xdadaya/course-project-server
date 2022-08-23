@@ -7,6 +7,7 @@ import fileUpLoad from 'express-fileupload'
 import authRoute from './routes/auth.js'
 import collectionRoute from './routes/collection.js'
 import userRoute from './routes/user.js'
+import themeRoute from './routes/theme.js'
 
 const app = express()
 dotenv.config()
@@ -24,6 +25,7 @@ app.use(express.static('uploads'))
 app.use(`/api/auth`, authRoute)
 app.use(`/api/collection`, collectionRoute)
 app.use(`/api/users`, userRoute)
+app.use(`/api/themes`, themeRoute)
 
 async function start(){
     try{
