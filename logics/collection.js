@@ -6,7 +6,7 @@ import { unlink } from 'node:fs'
 
 export const createCollection = async(req, res) =>{
     try{
-        if(req.isBanned) res.json({message: 'Пользователь заблокирован'})
+        if(req.isBanned) return res.json({message: 'Пользователь заблокирован'})
         const {title, theme, description} = req.body
         const user = await User.findById(req.userId)
         let fileName = ''
@@ -69,14 +69,18 @@ export const getCollectionById = async(req, res) => {
 export const deleteCollectionById = async(req, res) => {
     try{
         const collection = await Collection.findByIdAndDelete(req.params.id)
-        unlink(`./uploads/${collection.imgUrl}`, (err) => {
-            if (err) throw err;
+        if(!collection) return res.json({message: "There is no collection with that id"})
+        if(collection.imgUrl) {
+            unlink(`./uploads/${collection.imgUrl}`, (err) => {
+                if (err) console.log(err);
+            })
+        }
+        await User.updateOne({"_id": collection.author}, {
+            $pullAll: {
+                collections: [{_id: req.params.id}],
+            },
         })
-        if(!collection) res.json({message: "There is no collection with that id"})
-        await User.findByIdAndUpdate(collection.author, {
-            $pull: { posts: req.params.id },
-        })
-        res.json({message: "Collection was deleted."})
+        res.json({message: "Collection was deleted.", _id: req.params.id})
     } catch (e) {
         res.json({message: "Server error"})
     }

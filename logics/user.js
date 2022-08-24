@@ -8,6 +8,7 @@ export const getUsers = async(req, res) => {
                 "isAdmin": 1,
                 "isBanned": 1,
                 "createdAt": 1,
+                "collections": 1,
                 "_id": 0,
                 "id": "$_id"
             }}
@@ -20,6 +21,8 @@ export const getUsers = async(req, res) => {
 
 export const blockUsers = async(req, res) => {
     try{
+        if(!req.isAdmin) return res.json({message: "You are not an admin"})
+        if(req.isBanned) return res.json({message: "You are banned."})
         const ids = req.body.ids
         await User.updateMany({"_id": {"$in": ids}}, {"isBanned": true})
         res.json({message: "User(-s) blocked"})
@@ -30,6 +33,8 @@ export const blockUsers = async(req, res) => {
 
 export const unblockUsers = async(req, res) => {
     try{
+        if(!req.isAdmin) return res.json({message: "You are not an admin"})
+        if(req.isBanned) return res.json({message: "You are banned."})
         const ids = req.body.ids
         await User.updateMany({"_id": {"$in": ids}}, {"isBanned": false})
         res.json({message: "User(-s) unblocked"})
@@ -40,6 +45,8 @@ export const unblockUsers = async(req, res) => {
 
 export const setAdminRoleUsers = async(req, res) => {
     try{
+        if(!req.isAdmin) return res.json({message: "You are not an admin"})
+        if(req.isBanned) return res.json({message: "You are banned."})
         const ids = req.body.ids
         await User.updateMany({"_id": {"$in": ids}}, {"isAdmin": true})
         res.json({message: "User(-s) got Admin rights"})
@@ -50,6 +57,8 @@ export const setAdminRoleUsers = async(req, res) => {
 
 export const removeAdminRoleUsers = async(req, res) => {
     try{
+        if(!req.isAdmin) return res.json({message: "You are not an admin"})
+        if(req.isBanned) return res.json({message: "You are banned."})
         const ids = req.body.ids
         await User.updateMany({"_id": {"$in": ids}}, {"isAdmin": false})
         res.json({message: "User(-s) lost Admin rights"})
@@ -60,6 +69,8 @@ export const removeAdminRoleUsers = async(req, res) => {
 
 export const deleteUsers = async(req, res) => {
     try{
+        if(!req.isAdmin) return res.json({message: "You are not an admin"})
+        if(req.isBanned) return res.json({message: "You are banned."})
         const ids = req.body.ids
         await User.deleteMany({"_id": {"$in": ids}})
         res.json({message: "User(-s) deleted"})

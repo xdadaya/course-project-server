@@ -7,14 +7,15 @@ import {
     setAdminRoleUsers,
     unblockUsers
 } from "../logics/user.js";
+import {checkAuth} from "../middleware/checkAuth.js";
 
 const router = new Router()
 
 router.get('/', getUsers)
-router.post('/block', blockUsers)
-router.post('/unblock', unblockUsers)
-router.post('/setadmin', setAdminRoleUsers)
-router.post('/removeadmin', removeAdminRoleUsers)
-router.post('/delete', deleteUsers)
+router.post('/block', checkAuth, blockUsers)
+router.post('/unblock', checkAuth, unblockUsers)
+router.post('/setadmin', checkAuth, setAdminRoleUsers)
+router.post('/removeadmin', checkAuth, removeAdminRoleUsers)
+router.post('/delete', checkAuth, deleteUsers)
 
 export default router
