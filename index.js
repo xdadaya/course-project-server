@@ -3,11 +3,11 @@ import mongoose from 'mongoose'
 import dotenv from 'dotenv'
 import cors from 'cors'
 import fileUpLoad from 'express-fileupload'
-
 import authRoute from './routes/auth.js'
 import collectionRoute from './routes/collection.js'
 import userRoute from './routes/user.js'
 import themeRoute from './routes/theme.js'
+import corsMiddleware from "./middleware/cors.middleware.js";
 
 const app = express()
 dotenv.config()
@@ -17,6 +17,7 @@ const DB_USER = process.env.DB_USER
 const DB_PASSWORD = process.env.DB_PASSWORD
 const DB_NAME = process.env.DB_NAME
 
+app.use(corsMiddleware)
 app.use(cors())
 app.use(fileUpLoad())
 app.use(express.json())
