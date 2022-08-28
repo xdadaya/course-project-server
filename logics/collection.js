@@ -39,7 +39,25 @@ export const getAllCollections = async(req, res) => {
     try{
         const collections = await Collection.find().sort('-createdAt')
         if(!collections) return res.json({message: "No collections"})
-        const fiveBiggestCollection = await Collection.find().sort({ "itemsLength": -1 }).limit(5)
+        const fiveBiggestCollection = await Collection.aggregate(
+            [
+                { "$project": {
+                        "_id": 1,
+                        "username": 1,
+                        "title": 1,
+                        "description": 1,
+                        "theme": 1,
+                        "imgUrl": 1,
+                        "author": 1,
+                        "items": 1,
+                        "createdAt": 1,
+                        "updatedAt": 1,
+                        "length": { "$size": "$items" }
+                    }},
+                { "$sort": { "length": -1 } },
+                { "$limit": 5 }
+            ]
+        )
         res.json({collections, fiveBiggestCollection})
 
     }catch (e) {
@@ -88,6 +106,7 @@ export const deleteCollectionById = async(req, res) => {
 
 export const updateCollectionById = async(req, res) => {
     try{
+        console.log(req.body)
         const {title, description, theme, id} = req.body
         const collection = await Collection.findById(id)
 

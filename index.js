@@ -7,6 +7,8 @@ import authRoute from './routes/auth.js'
 import collectionRoute from './routes/collection.js'
 import userRoute from './routes/user.js'
 import themeRoute from './routes/theme.js'
+import itemRoute from './routes/item.js'
+import tagRoute from './routes/tag.js'
 import corsMiddleware from "./middleware/cors.middleware.js";
 
 const app = express()
@@ -25,8 +27,10 @@ app.use(express.static('uploads'))
 
 app.use(`/api/auth`, authRoute)
 app.use(`/api/collection`, collectionRoute)
+app.use(`/api/item`, itemRoute)
 app.use(`/api/users`, userRoute)
 app.use(`/api/themes`, themeRoute)
+app.use(`/api/tag`, tagRoute)
 
 async function start(){
     try{
