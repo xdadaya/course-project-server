@@ -2,7 +2,7 @@ import {Router} from "express";
 import {checkAuth} from "../middleware/checkAuth.js";
 import {
     createItemInCollection,
-    deleteItemInCollection, dislikeItem,
+    deleteItemInCollection, dislikeItem, getItemById,
     getItemsByCollectionId,
     getLastItems,
     likeItem
@@ -11,6 +11,7 @@ import {
 const router = new Router()
 
 router.get('/:id', getItemsByCollectionId)
+router.get('/page/:id', getItemById)
 router.post('/:id', checkAuth, createItemInCollection)
 router.delete('/:id', deleteItemInCollection)
 router.get('/', getLastItems)

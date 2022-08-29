@@ -3,6 +3,7 @@ import Collection from "../models/Collection.js";
 import mongoose from "mongoose";
 import Tag from "../models/Tag.js";
 import User from "../models/User.js";
+import Comment from "../models/Comment.js";
 
 export const getItemsByCollectionId = async (req, res) => {
     try {
@@ -20,6 +21,15 @@ export const getItemsByCollectionId = async (req, res) => {
         res.json(items)
     } catch (e) {
         res.json({message: "Server error getting items in collection"})
+    }
+}
+
+export const getItemById = async(req, res) => {
+    try{
+        const item = await Item.findById(req.params.id)
+        res.json(item)
+    } catch (e) {
+        res.json({message: "Server error getting item"})
     }
 }
 
@@ -143,6 +153,7 @@ export const deleteItemInCollection = async(req, res) => {
                 items: [{_id: req.params.id}],
             },
         })
+        await Comment.deleteMany({"_id": {"$in": item.comments}})
         await Tag.update({_id: {"$in": item.tags}}, {
             $pullAll: {items: [{_id: req.params.id}]}
         })

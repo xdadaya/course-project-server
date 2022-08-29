@@ -1,4 +1,5 @@
 import Tag from "../models/Tag.js";
+import mongoose from "mongoose";
 
 export const getTags = async(req, res) => {
     try{
@@ -7,6 +8,15 @@ export const getTags = async(req, res) => {
         res.json(items)
     } catch (e) {
         res.json({message: "Server error"})
+    }
+}
+
+export const getTagsByItemId = async(req, res) => {
+    try{
+        const tags = await Tag.find({items: mongoose.Types.ObjectId(req.params.id)})
+        res.json(tags)
+    } catch (e) {
+        res.json({message: "Server error with finding tags"})
     }
 }
 
