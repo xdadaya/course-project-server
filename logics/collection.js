@@ -1,20 +1,50 @@
 import Collection from "../models/Collection.js";
 import User from "../models/User.js";
-import path, { dirname } from 'path'
-import { fileURLToPath } from 'url'
-import { unlink } from 'node:fs'
+import path, {dirname} from 'path'
+import {fileURLToPath} from 'url'
+import {unlink, createReadStream} from 'node:fs'
+import AWS from 'aws-sdk'
 
-export const createCollection = async(req, res) =>{
-    try{
-        if(req.isBanned) return res.json({message: 'Пользователь заблокирован'})
+const S3_BUCKET = process.env.S3_BUCKET
+const REGION = process.env.REGION
+const ACCESS_KEY = process.env.ACCESS_KEY
+const SECRET_ACCESS_KEY = process.env.SECRET_ACCESS_KEY
+
+
+
+export const createCollection = async (req, res) => {
+    try {
+        if (req.isBanned) return res.json({message: 'Пользователь заблокирован'})
         const {title, theme, description} = req.body
         const user = await User.findById(req.userId)
         let fileName = ''
 
-        if(req.files) {
+        if (req.files) {
             fileName = Date.now().toString() + req.files.image.name
             const __dirname = dirname(fileURLToPath(import.meta.url))
             req.files.image.mv(path.join(__dirname, '..', 'uploads', fileName))
+
+            AWS.config.update({
+                accessKeyId: ACCESS_KEY,
+                secretAccessKey: SECRET_ACCESS_KEY
+            })
+            const myBucket = new AWS.S3({
+                params: { Bucket: S3_BUCKET},
+                region: REGION,
+            })
+            const params = {
+                ACL: 'public-read',
+                Body: req.params.image,
+                Bucket: S3_BUCKET,
+                Key: fileName
+            };
+            await myBucket.putObject(params)
+                .on('httpUploadProgress', (evt) => {
+                    console.log(Math.round((evt.loaded / evt.total) * 100))
+                })
+                .send((err) => {
+                    if (err) console.log(err)
+                })
         }
 
         const newCollection = new Collection({
@@ -35,13 +65,14 @@ export const createCollection = async(req, res) =>{
     }
 }
 
-export const getAllCollections = async(req, res) => {
-    try{
+export const getAllCollections = async (req, res) => {
+    try {
         const collections = await Collection.find().sort('-createdAt')
-        if(!collections) return res.json({message: "No collections"})
+        if (!collections) return res.json({message: "No collections"})
         const fiveBiggestCollection = await Collection.aggregate(
             [
-                { "$project": {
+                {
+                    "$project": {
                         "_id": 1,
                         "username": 1,
                         "title": 1,
@@ -52,31 +83,32 @@ export const getAllCollections = async(req, res) => {
                         "items": 1,
                         "createdAt": 1,
                         "updatedAt": 1,
-                        "length": { "$size": "$items" }
-                    }},
-                { "$sort": { "length": -1 } },
-                { "$limit": 5 }
+                        "length": {"$size": "$items"}
+                    }
+                },
+                {"$sort": {"length": -1}},
+                {"$limit": 5}
             ]
         )
         res.json({collections, fiveBiggestCollection})
 
-    }catch (e) {
+    } catch (e) {
         res.json({message: "Server error"})
     }
 }
 
-export const getMyCollections = async(req, res) => {
-    try{
+export const getMyCollections = async (req, res) => {
+    try {
         const list = await Collection.find({'author': req.userId}).sort('-createdAt')
         res.json({list})
 
-    }catch (e) {
+    } catch (e) {
         res.json({message: "Server error"})
     }
 }
 
-export const getCollectionById = async(req, res) => {
-    try{
+export const getCollectionById = async (req, res) => {
+    try {
         const collection = await Collection.findById(req.params.id)
         res.json(collection)
     } catch (e) {
@@ -84,11 +116,11 @@ export const getCollectionById = async(req, res) => {
     }
 }
 
-export const deleteCollectionById = async(req, res) => {
-    try{
+export const deleteCollectionById = async (req, res) => {
+    try {
         const collection = await Collection.findByIdAndDelete(req.params.id)
-        if(!collection) return res.json({message: "There is no collection with that id"})
-        if(collection.imgUrl) {
+        if (!collection) return res.json({message: "There is no collection with that id"})
+        if (collection.imgUrl) {
             unlink(`./uploads/${collection.imgUrl}`, (err) => {
                 if (err) console.log(err);
             })
@@ -104,13 +136,12 @@ export const deleteCollectionById = async(req, res) => {
     }
 }
 
-export const updateCollectionById = async(req, res) => {
-    try{
-        console.log(req.body)
+export const updateCollectionById = async (req, res) => {
+    try {
         const {title, description, theme, id} = req.body
         const collection = await Collection.findById(id)
 
-        if(req.files) {
+        if (req.files) {
             unlink(`./uploads/${collection.imgUrl}`, (err) => {
                 if (err) throw err;
             })

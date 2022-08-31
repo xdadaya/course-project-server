@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 export const getTags = async(req, res) => {
     try{
         const tags = await Tag.find()
-        const items = tags.map(({title, _id}) => ({value: _id, label: title}))
+        const items = tags.map(({title}) => ({value: title, label: title}))
         res.json(items)
     } catch (e) {
         res.json({message: "Server error"})

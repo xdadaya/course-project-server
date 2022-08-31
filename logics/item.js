@@ -9,14 +9,16 @@ export const getItemsByCollectionId = async (req, res) => {
     try {
         const items = await Item.aggregate([
             {$match: {collectionId: mongoose.Types.ObjectId(req.params.id)}},
-            {$project: {
+            {
+                $project: {
                     title: 1,
                     createdAt: 1,
                     tags: 1,
                     likes: 1,
                     _id: 0,
                     id: "$_id"
-            }}
+                }
+            }
         ])
         res.json(items)
     } catch (e) {
@@ -24,31 +26,35 @@ export const getItemsByCollectionId = async (req, res) => {
     }
 }
 
-export const getItemById = async(req, res) => {
-    try{
+export const getItemById = async (req, res) => {
+    try {
         const item = await Item.findById(req.params.id)
-        res.json(item)
+        const tag = await Tag.find({"_id": {"$in": item.tags}})
+        const tags = tag.map(({title}) => ({value: title, label: title}))
+        res.json({item, tags})
     } catch (e) {
         res.json({message: "Server error getting item"})
     }
 }
 
-export const likeItem = async(req, res) => {
-    try{
+export const likeItem = async (req, res) => {
+    try {
         const user = await User.findById(req.userId)
         const itemUpdate = await Item.findByIdAndUpdate(req.body.id, {
             $push: {likes: user}
         })
         const item = await Item.aggregate([
             {$match: {_id: mongoose.Types.ObjectId(req.body.id)}},
-            {$project: {
+            {
+                $project: {
                     title: 1,
                     createdAt: 1,
                     tags: 1,
                     likes: 1,
                     _id: 0,
                     id: "$_id"
-                }}
+                }
+            }
         ])
         res.json({item: item[0], _id: req.body.id})
     } catch (e) {
@@ -56,8 +62,8 @@ export const likeItem = async(req, res) => {
     }
 }
 
-export const dislikeItem = async(req, res) => {
-    try{
+export const dislikeItem = async (req, res) => {
+    try {
         const user = await User.findById(req.userId)
         await Item.findByIdAndUpdate(req.body.id, {
             $pullAll: {
@@ -66,14 +72,16 @@ export const dislikeItem = async(req, res) => {
         })
         const item = await Item.aggregate([
             {$match: {_id: mongoose.Types.ObjectId(req.body.id)}},
-            {$project: {
+            {
+                $project: {
                     title: 1,
                     createdAt: 1,
                     tags: 1,
                     likes: 1,
                     _id: 0,
                     id: "$_id"
-                }}
+                }
+            }
         ])
         res.json({item: item[0], _id: req.body.id})
     } catch (e) {
@@ -81,9 +89,9 @@ export const dislikeItem = async(req, res) => {
     }
 }
 
-export const getLastItems = async(req,res) => {
-    try{
-        const items = await Item.find({},['title','collectionName'], {limit: 5, sort: {createdAt: -1}})
+export const getLastItems = async (req, res) => {
+    try {
+        const items = await Item.find({}, ['title', 'collectionName'], {limit: 5, sort: {createdAt: -1}})
         res.json(items)
     } catch (e) {
         res.json({message: "Server error getting last items"})
@@ -96,8 +104,8 @@ export const createItemInCollection = async (req, res) => {
         const allCreatedTagsTable = await Tag.find()
         const allCreatedTags = allCreatedTagsTable.map(({title}) => (title))
         const itemTags = tags.split(',')
-        for(let i = 0; i<itemTags.length; i++){
-            if(!allCreatedTags.includes(itemTags[i])) {
+        for (let i = 0; i < itemTags.length; i++) {
+            if (!allCreatedTags.includes(itemTags[i])) {
                 const tag = new Tag({
                     title: itemTags[i]
                 })
@@ -130,14 +138,16 @@ export const createItemInCollection = async (req, res) => {
         const tofind = newItem._id
         const item = await Item.aggregate([
             {$match: {_id: mongoose.Types.ObjectId(tofind)}},
-            {$project: {
+            {
+                $project: {
                     title: 1,
                     createdAt: 1,
                     tags: 1,
                     likes: 1,
                     _id: 0,
                     id: "$_id"
-                }}
+                }
+            }
         ])
         res.json(item[0])
     } catch (e) {
@@ -145,8 +155,59 @@ export const createItemInCollection = async (req, res) => {
     }
 }
 
-export const deleteItemInCollection = async(req, res) => {
-    try{
+export const editItemInCollection = async (req, res) => {
+    try {
+        const {title, tags, id} = req.body
+        const itemToUpdate = await Item.findById(id)
+        itemToUpdate.title = title
+        await Tag.update({_id: {"$in": itemToUpdate.tags}}, {
+            $pullAll: {items: [{_id: id}]}
+        })
+        itemToUpdate.tags = []
+        await itemToUpdate.save()
+        const allCreatedTagsTable = await Tag.find()
+        const allCreatedTags = allCreatedTagsTable.map(({title}) => (title))
+        const itemTags = tags.split(',')
+        for (let i = 0; i < itemTags.length; i++) {
+            if (!allCreatedTags.includes(itemTags[i])) {
+                const tag = new Tag({
+                    title: itemTags[i]
+                })
+                await tag.save()
+            }
+        }
+        await Tag.update({title: {"$in": itemTags}}, {
+            $push: {items: itemToUpdate}
+        })
+        const tagsIdTable = await Tag.find({title: {"$in": itemTags}})
+        const tagsId = tagsIdTable.map(({_id}) => (_id))
+
+        await Item.update({_id: itemToUpdate._id}, {
+            $push: {tags: tagsId}
+        })
+        const item = await Item.aggregate([
+            {$match: {_id: mongoose.Types.ObjectId(itemToUpdate._id)}},
+            {
+                $project: {
+                    title: 1,
+                    createdAt: 1,
+                    tags: 1,
+                    likes: 1,
+                    _id: 0,
+                    id: "$_id"
+                }
+            }
+        ])
+
+
+        res.json(item[0])
+    } catch (e) {
+        res.json({message: 'Server error updating item'})
+    }
+}
+
+export const deleteItemInCollection = async (req, res) => {
+    try {
         const item = await Item.findByIdAndDelete(req.params.id)
         await Collection.findByIdAndUpdate(item.collectionId, {
             $pullAll: {
@@ -158,7 +219,7 @@ export const deleteItemInCollection = async(req, res) => {
             $pullAll: {items: [{_id: req.params.id}]}
         })
         res.json({message: "Item was deleted.", _id: req.params.id})
-    }catch (e) {
+    } catch (e) {
         res.json({message: "Server error deleting item"})
     }
 }

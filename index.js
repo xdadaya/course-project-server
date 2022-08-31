@@ -10,6 +10,7 @@ import themeRoute from './routes/theme.js'
 import itemRoute from './routes/item.js'
 import tagRoute from './routes/tag.js'
 import commentRoute from './routes/comment.js'
+import searchRouter from './routes/search.js'
 import corsMiddleware from "./middleware/cors.middleware.js";
 
 const app = express()
@@ -33,6 +34,7 @@ app.use(`/api/users`, userRoute)
 app.use(`/api/themes`, themeRoute)
 app.use(`/api/tag`, tagRoute)
 app.use(`/api/comment`, commentRoute)
+app.use(`/api/search`, searchRouter)
 
 async function start(){
     try{
