@@ -5,13 +5,14 @@ import Tag from "../models/Tag.js";
 
 export const fullTextSearch = async(req, res) => {
     try{
+        let itemsId = []
         const itemsFound = await Item.aggregate([
             { $match: {
                     $or: [
                         { 'title': { '$regex': req.params.query, '$options': 'i' } }
                     ]
                 }}])
-        let itemsId = []
+
         const commentsFound = await Comment.aggregate([
             { $match: {
                     $or: [
@@ -53,18 +54,16 @@ export const fullTextSearch = async(req, res) => {
             })
         })
 
-        const foundNotInItem = await Item.find().where('_id').in(itemsId)
 
+        const foundNotInItem = await Item.find().where('_id').in(itemsId)
         const allItems = itemsFound.concat(foundNotInItem)
 
-        const items = allItems.filter(function(item, pos) {
-            return allItems.indexOf(item) === pos;
-        })
-        console.log(itemsFound.length)
-        console.log(foundNotInItem.length)
-        console.log(allItems.length)
-        console.log(items.length)
-        console.log('Finish')
+        const items = allItems.filter((value, index) => {
+            const _value = JSON.stringify(value);
+            return index === allItems.findIndex(obj => {
+                return JSON.stringify(obj) === _value;
+            });
+        });
         res.json(items)
     } catch (e){
         res.json({message: "Server error searching"})
