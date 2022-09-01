@@ -24,27 +24,27 @@ export const createCollection = async (req, res) => {
             const __dirname = dirname(fileURLToPath(import.meta.url))
             req.files.image.mv(path.join(__dirname, '..', 'uploads', fileName))
 
-            AWS.config.update({
-                accessKeyId: ACCESS_KEY,
-                secretAccessKey: SECRET_ACCESS_KEY
-            })
-            const myBucket = new AWS.S3({
-                params: { Bucket: S3_BUCKET},
-                region: REGION,
-            })
-            const params = {
-                ACL: 'public-read',
-                Body: req.params.image,
-                Bucket: S3_BUCKET,
-                Key: fileName
-            };
-            await myBucket.putObject(params)
-                .on('httpUploadProgress', (evt) => {
-                    console.log(Math.round((evt.loaded / evt.total) * 100))
-                })
-                .send((err) => {
-                    if (err) console.log(err)
-                })
+            // AWS.config.update({
+            //     accessKeyId: ACCESS_KEY,
+            //     secretAccessKey: SECRET_ACCESS_KEY
+            // })
+            // const myBucket = new AWS.S3({
+            //     params: { Bucket: S3_BUCKET},
+            //     region: REGION,
+            // })
+            // const params = {
+            //     ACL: 'public-read',
+            //     Body: req.params.image,
+            //     Bucket: S3_BUCKET,
+            //     Key: fileName
+            // };
+            // await myBucket.putObject(params)
+            //     .on('httpUploadProgress', (evt) => {
+            //         console.log(Math.round((evt.loaded / evt.total) * 100))
+            //     })
+            //     .send((err) => {
+            //         if (err) console.log(err)
+            //     })
         }
 
         const newCollection = new Collection({
