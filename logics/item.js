@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 import Tag from "../models/Tag.js";
 import User from "../models/User.js";
 import Comment from "../models/Comment.js";
+import AdditionalValue from "../models/AdditionalValue.js";
 
 export const getItemsByCollectionId = async (req, res) => {
     try {
@@ -100,7 +101,8 @@ export const getLastItems = async (req, res) => {
 
 export const createItemInCollection = async (req, res) => {
     try {
-        const {title, collectionId, tags} = req.body
+        const {title, collectionId, tags, additionalValues} = req.body
+        const addValues = JSON.parse(additionalValues)
         const allCreatedTagsTable = await Tag.find()
         const allCreatedTags = allCreatedTagsTable.map(({title}) => (title))
         const itemTags = tags.split(',')
@@ -119,6 +121,14 @@ export const createItemInCollection = async (req, res) => {
             collectionId: collectionId
         })
 
+        addValues["customValues"].map(async (value) => {
+            const newAddValue = new AdditionalValue({
+                inputValue: value.inputValue,
+                itemId: newItem._id,
+                additionalFieldId: value.additionalFieldId
+            })
+            await newAddValue.save()
+        })
         await Collection.update({"_id": collectionId}, {
             $push: {items: newItem}
         })
@@ -157,7 +167,8 @@ export const createItemInCollection = async (req, res) => {
 
 export const editItemInCollection = async (req, res) => {
     try {
-        const {title, tags, id} = req.body
+        const {title, tags, id, additionalValues} = req.body
+        const addValues = JSON.parse(additionalValues)
         const itemToUpdate = await Item.findById(id)
         itemToUpdate.title = title
         await Tag.update({_id: {"$in": itemToUpdate.tags}}, {
@@ -165,6 +176,20 @@ export const editItemInCollection = async (req, res) => {
         })
         itemToUpdate.tags = []
         await itemToUpdate.save()
+        addValues["customValues"].map(async (value) => {
+            const addValue = await AdditionalValue.findOne({itemId: value.itemId, additionalFieldId: value.additionalFieldId})
+            if (addValue) {
+                addValue.inputValue = value.inputValue
+                await addValue.save()
+            } else {
+                const newAddValue = new AdditionalValue({
+                    inputValue: value.inputValue,
+                    itemId: value.itemId,
+                    additionalFieldId: value.additionalFieldId
+                })
+                await newAddValue.save()
+            }
+        })
         const allCreatedTagsTable = await Tag.find()
         const allCreatedTags = allCreatedTagsTable.map(({title}) => (title))
         const itemTags = tags.split(',')
@@ -214,6 +239,7 @@ export const deleteItemInCollection = async (req, res) => {
                 items: [{_id: req.params.id}],
             },
         })
+        await AdditionalValue.deleteMany({itemId: req.params.id})
         await Comment.deleteMany({"_id": {"$in": item.comments}})
         await Tag.update({_id: {"$in": item.tags}}, {
             $pullAll: {items: [{_id: req.params.id}]}

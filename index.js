@@ -11,6 +11,8 @@ import itemRoute from './routes/item.js'
 import tagRoute from './routes/tag.js'
 import commentRoute from './routes/comment.js'
 import searchRouter from './routes/search.js'
+import addFields from './routes/addFields.js'
+import addValue from './routes/addValue.js'
 import corsMiddleware from "./middleware/cors.middleware.js";
 
 const app = express()
@@ -35,6 +37,8 @@ app.use(`/api/themes`, themeRoute)
 app.use(`/api/tag`, tagRoute)
 app.use(`/api/comment`, commentRoute)
 app.use(`/api/search`, searchRouter)
+app.use(`/api/addfields`, addFields)
+app.use(`/api/addvalue`, addValue)
 
 async function start(){
     try{

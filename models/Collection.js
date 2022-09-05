@@ -8,6 +8,7 @@ const CollectionSchema = new mongoose.Schema({
         imgUrl: {type: String, default:''},
         author: {type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true},
         items: [{type: mongoose.Schema.Types.ObjectId, ref: 'Item'}],
+        additionalFields : [{type: mongoose.Schema.Types.ObjectId, ref: 'AdditionalField'}]
     },
     {timestamps: true}
 )

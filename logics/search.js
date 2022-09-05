@@ -2,6 +2,7 @@ import Item from "../models/Item.js";
 import Tag from "../models/Tag.js";
 import Collection from "../models/Collection.js";
 import Comment from "../models/Comment.js";
+import AdditionalValue from "../models/AdditionalValue.js";
 
 export const fullTextSearch = async (req, res) => {
     try {
@@ -24,6 +25,13 @@ export const fullTextSearch = async (req, res) => {
                 text: {query: req.params.query, path: {wildcard: '*'}}
             }
         }])
+        const addvalues = await AdditionalValue.aggregate([
+            { $match: {
+                    $or: [
+                        { 'inputValue': { '$regex': req.params.query, '$options': 'i' } }
+                    ]
+                }}])
+
         const comments = await Comment.aggregate([
             { $match: {
                     $or: [
@@ -40,6 +48,9 @@ export const fullTextSearch = async (req, res) => {
             itemsId.push(...items)
         })
         comments.map(({itemId}) => {
+            itemsId.push(itemId)
+        })
+        addvalues.map(({itemId}) => {
             itemsId.push(itemId)
         })
 
